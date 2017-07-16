@@ -2,9 +2,11 @@ package main
 
 import (
 	"time"
+	"github.com/jinzhu/gorm"
 )
 
 type User struct {
+	gorm.Model
 	Uuid               string    `json:"uuid"`
 	Email              string    `json:"email"`
 	pw_func            string
@@ -31,6 +33,7 @@ type sign_in_params struct {
 }
 
 type Item struct {
+	gorm.Model
 	Uuid         string    `json:"uuid"`
 	User_uuid    string    `json:"user_uuid"`
 	Content      string    `json:"content"`
@@ -45,13 +48,6 @@ type Item struct {
 //Items - is an items slice
 type Items []Item
 
-//SyncRequest - type for incoming sync request
-type SyncRequest struct {
-	Items       Items  `json:"items"`
-	SyncToken   string `json:"sync_token"`
-	CursorToken string `json:"cursor_token"`
-	Limit       int    `json:"limit"`
-}
 
 type unsaved struct {
 	Item

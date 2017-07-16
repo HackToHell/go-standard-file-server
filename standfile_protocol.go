@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 	"crypto/sha256"
@@ -11,6 +12,8 @@ import (
 	"fmt"
 	"log"
 	"database/sql"
+	"strings"
+	"strconv"
 )
 
 func (user User) sign_in(password string) string {
@@ -153,4 +156,28 @@ func (this *Item) LoadByUUID(uuid string) bool {
 func map_to_item(row *sql.Row, item *Item) error {
 	err := row.Scan(&item.Uuid,&item.Content_type,&item.Enc_item_key,&item.Auth_hash,&item.User_uuid,&item.Created_at,&item.Updated_at,&item.Deleted)
 		return err
+}
+
+func GetTokenFromTime(date time.Time) string {
+	return base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("1:%d", date.UnixNano())))
+}
+
+//GetTimeFromToken - retreive datetime from sync token
+func GetTimeFromToken(token string) time.Time {
+	decoded, err := base64.URLEncoding.DecodeString(token)
+	if err != nil {
+		log.Print(err)
+		return time.Now()
+	}
+	parts := strings.Split(string(decoded), ":")
+	str, err := strconv.Atoi(parts[1])
+	if err != nil {
+		log.Print(err)
+		return time.Now()
+	}
+	return time.Time(time.Unix(0, int64(str)))
+}
+
+func jwt_decode(token string) {
+
 }

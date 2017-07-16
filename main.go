@@ -8,6 +8,9 @@ import (
 	"os"
 	"net/http"
 	"encoding/json"
+	"strings"
+	"fmt"
+	"github.com/dgrijalva/jwt-go"
 )
 
 func main() {
@@ -24,6 +27,7 @@ func main() {
 	http.HandleFunc("/auth/sign_in", web_sign_in)
 	http.HandleFunc("/auth", web_register)
 	//http.HandleFunc("/auth/change_pw",web_change_password)
+	http.HandleFunc("/items/sync", sync_items)
 
 	http.ListenAndServe(":8080", nil)
 }
@@ -149,7 +153,33 @@ func initialize_db() {
 
 }
 
-func sync_items(){
+func sync_items(w http.ResponseWriter, r *http.Request){
+	decoder := json.NewDecoder(r.Body)
+	var jsondata SyncRequest
+	err := decoder.Decode(&jsondata)
+	if err != nil {
+		panic(err)
+	}
+
+	authHeaderParts := strings.Split(r.Header.Get("Authorization"), " ")
+	if len(authHeaderParts) != 2 || strings.ToLower(authHeaderParts[0]) != "bearer" {
+		log.Print("Wrong Bearer")
+	}
+
+	token, err := jwt.Parse(authHeaderParts[1], func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return SigningKey, nil
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+
+	}
 
 }
 
@@ -179,4 +209,12 @@ type web_register_struct struct {
 type web_sign_in_struct struct {
 	Email    string
 	Password string
+}
+
+//SyncRequest - type for incoming sync request
+type SyncRequest struct {
+	Items       Items  `json:"items"`
+	SyncToken   string `json:"sync_token"`
+	CursorToken string `json:"cursor_token"`
+	Limit       int    `json:"limit"`
 }
